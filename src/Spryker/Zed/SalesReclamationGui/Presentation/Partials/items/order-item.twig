@@ -3,9 +3,12 @@
 {% set priceToPay = group ? bundleItem.unitPriceToPayAggregation : orderItem.unitPriceToPayAggregation %}
 {% set image = image %}
 
-<td class="item-checker"><input type="checkbox" name="order-item" value="{{ orderItem.idSalesOrderItem }}" class="item-check" /></td>
+{#<td class="item-checker">#}
+    {#<input type="checkbox" name="id-order-item[]" value="{{ orderItem.idSalesOrderItem }}" class="item-check" />#}
+{#</td>#}
+{% block order_item %}
 {% if displayImage %}
-    <td {% if group %}rowspan="{{ itemCount }}"{% endif %}>
+    <td {% if group %}rowspan="{{ itemCount }}" {% endif %}>
         <div class="image-wrap">
             <img class="product-image" src="{{ image }}" alt="{{ orderItem.name }}">
         </div>
@@ -23,7 +26,7 @@
         {{ 'Sku' | trans }}: {{ orderItem.Sku }}
     </div>
 
-    {% if (orderItem.metadata.superAttributes | default([])) | length > 0 %}
+    {% if orderItem.metadata.superAttributes is not null and orderItem.metadata.superAttributes | length > 0 %}
         <div class="variant-details">
             <h3>{{ 'Variant Details' | trans }}</h3>
             {% for attributeName, attributeValue in orderItem.metadata.superAttributes | slice(0,2) %}
@@ -50,7 +53,7 @@
 </td>
 <td>
     <div>
-        {% embed '@SalesReclamationGui/Partials/items/discounted-price.twig' with {
+        {% embed '@SalesReclamationGui/partials/items/discounted-price.twig' with {
             subtotal: orderItem.unitPrice,
             priceToPay: orderItem.unitPrice - orderItem.unitDiscountAmountFullAggregation | default(0)
         } %} {% endembed %}
@@ -60,7 +63,7 @@
 
 {% if displayTotals %}
     <td {% if group %}rowspan="{{ rowCount }}"{% endif %} data-qa="item-total-amount" data-qa-raw="{{ priceToPay }}">
-        {% embed '@SalesReclamationGui/Partials/items/discounted-price.twig' with {
+        {% embed '@SalesReclamationGui/partials/items/discounted-price.twig' with {
             subtotal: subtotal,
             priceToPay: priceToPay
         } %} {% endembed %}
@@ -68,25 +71,9 @@
 {% endif %}
 <td rowspan="{{ numberOfItemAdditions }}" class="state-history">
     <div>
-        <a href="{{ url('/oms/index/draw', {'process': orderItem.process, 'state': orderItem.state.name}) }}" target="_blank">{{ (orderItem.stateHistory | first).name }}</a> ({{ orderItem.process }})
+        <a href="{{ url('/oms/index/draw', {'process': orderItem.process, 'state': orderItem.state.name}) }}"
+           target="_blank"
+        >{{ (orderItem.stateHistory | first).name }}</a> ({{ orderItem.process }})
     </div>
-    {% if orderItem.stateHistory | length > 1 %}
-        <div id="history_details_{{ orderItem.idSalesOrderItem }}" class="hidden">
-            {% for stateHistory in orderItem.stateHistory | slice(1) %}
-                <div>{{ stateHistory.name }} ({{ stateHistory.createdAt | formatDateTime }})</div>
-            {% endfor %}
-        </div>
-
-        <a id="history-btn-{{ orderItem.idSalesOrderItem }}" class="btn btn-sm more-history is-hidden" data-id="{{ orderItem.IdSalesOrderItem }}"><span class="show-more">{{ 'Show history' | trans }}</span><span class="show-less">{{ 'Hide history' | trans }}</span></a>
-    {% endif %}
 </td>
-<td>
-    {% include [
-        '@Oms/RenderForm/_partial/order-item-actions.twig',
-        '@SalesReclamationGui/Detail/_partial/reclamation-item-actions.twig',
-    ] ignore missing  with {
-        idSalesOrderItem: orderItem.idSalesOrderItem,
-        redirectUrl: changeStatusRedirectUrl,
-        eventsGroupedByItem: eventsGroupedByItem[orderItem.idSalesOrderItem],
-    } only %}
-</td>
+{% endblock %}
